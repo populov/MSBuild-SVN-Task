@@ -54,15 +54,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Sample\AssemblyInfo.cs.in">
+    <None Include="SampleData\AssemblyInfo.cs.in">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sample\GitSvnSample.txt">
+    <None Include="SampleData\GitSvnSample.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Sample\SvnSampleRus.txt">
+    <None Include="SampleData\SvnSampleRus.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

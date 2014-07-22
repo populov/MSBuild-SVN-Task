@@ -3,28 +3,36 @@
 namespace HauntedSoft.MsBuild
 {
     using System;
-    using System.Diagnostics;
     using System.IO;
     using System.Text;
-    using System.Threading;
     using Microsoft.Build.Utilities;
 
     public class Svn2AssemblyInfo : Task
     {
-        private delegate void LogMessageFunction(string command, params object[] arguments);
+        readonly Util.LogMessageFunction log;
+
+        public Svn2AssemblyInfo()
+        {
+            log = (str, args) => Log.LogMessage(str, args);
+        }
+
+        public Svn2AssemblyInfo(Util.LogMessageFunction log)
+        {
+            this.log = log;
+        }
 
         public string TemplateFile { get; set; }
         public string OutputFile { get; set; }
+        public bool Silent { get; set; }
 
         public override bool Execute()
         {
-            LogMessageFunction log = (str, args) => Log.LogMessage(str, args);
             var templateFile = TemplateFile ?? "Properties\\AssemblyInfo.cs.in";
             var outputFile = OutputFile ?? "Properties\\AssemblyInfo.cs";
 
-            var svnInfo = GetCommandOutput("cmd", "/c svn info", log);
+            var svnInfo = Util.GetCommandOutput("cmd", "/c svn info", log, Silent);
             if (string.IsNullOrWhiteSpace(svnInfo) || svnInfo.Count(c => c == '\r' || c == '\n') < 3)
-                svnInfo = GetCommandOutput("cmd", "/c git svn info", log);
+                svnInfo = Util.GetCommandOutput("cmd", "/c git svn info", log, Silent);
 
             var template = File.Exists(templateFile) ? File.ReadAllText(templateFile) : "";
             var newContent = GenerateFileContent(svnInfo, template);
@@ -69,60 +77,6 @@ namespace HauntedSoft.MsBuild
                 return true;
             var oldContent = File.ReadAllText(fileName);
             return newContent != oldContent;
-        }
-
-        private static string GetCommandOutput(string command, string args, LogMessageFunction log)
-        {
-            var psi = new ProcessStartInfo
-                          {
-                              Arguments = args,
-                              CreateNoWindow = true,
-                              ErrorDialog = false,
-                              FileName = command,
-                              UseShellExecute = false,
-                              WorkingDirectory = Directory.GetCurrentDirectory(),
-                              RedirectStandardError = true,
-                              RedirectStandardOutput = true,
-                          };
-            log(command + " " + args);
-            var output = new StringBuilder();
-            try
-            {
-                var p = Process.Start(psi);
-                while (!p.HasExited)
-                {
-                    if (!p.StandardOutput.EndOfStream || !p.StandardError.EndOfStream)
-                    {
-                        AppendOutput(p, output);
-                    }
-                    else
-                    {
-                        Thread.Sleep(200);
-                    }
-                }
-                AppendOutput(p, output);
-                log("exit code:" + p.ExitCode);
-                return output.ToString();
-            }
-            catch (Exception)
-            {
-                return string.Empty;
-            }
-        }
-
-        private static void AppendOutput(Process p, StringBuilder output)
-        {
-            if (!p.StandardOutput.EndOfStream)
-            {
-                var str = p.StandardOutput.ReadToEnd();
-                output.Append(str);
-                Console.WriteLine(str);
-            }
-            if (!p.StandardError.EndOfStream)
-            {
-                var str = p.StandardError.ReadToEnd();
-                Console.WriteLine(str);
-            }
         }
     }
 }
