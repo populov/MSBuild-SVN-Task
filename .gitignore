@@ -1,0 +1,9 @@
+_ReSharper*
+bin/
+*.swp
+obj/
+*.user
+*.suo
+.gitk*
+Properties/AssemblyInfo.cs
+AssemblyInfo.cs

@@ -1,0 +1,10 @@
+Path: .
+URL: svn://scm-srv/Project/trunk/
+Repository Root: svn://scm-srv/Project
+Repository UUID: cedab20b-4bf9-4a5c-825e-1c336eb44330
+Revision: 6488
+Node Kind: directory
+Schedule: normal
+Last Changed Author: populov
+Last Changed Rev: 6483
+Last Changed Date: 2014-07-17 11:44:23 +0600 (Чт., 17 июля 2014)

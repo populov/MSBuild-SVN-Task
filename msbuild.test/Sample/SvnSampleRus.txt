@@ -1,0 +1,11 @@
+﻿Путь к корню рабочей копии: /home/user/Projects/achartengine-svn
+URL: http://achartengine.googlecode.com/svn/trunk
+Relative URL: ^/trunk
+Корень репозитория: http://achartengine.googlecode.com/svn
+UUID репозитория: 0b5bfab6-fc16-11dd-ac65-f74f249cfaac
+Редакция: 540
+Вид узла: каталог
+Задано: нормально
+Автор последнего изменения: dandromereschi@gmail.com
+Редакция последнего изменения: 540
+Дата последнего изменения: 2013-06-07 16:40:05 +0600 (Пт., 07 июня 2013)

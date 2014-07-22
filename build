@@ -1,0 +1,6 @@
+#!/bin/bash
+
+target=msbuild.sln
+
+xbuild /t:Rebuild /p:DefineConstants=MONO /p:Configuration=Release $target
+xbuild /t:Rebuild /p:DefineConstants=MONO /p:Configuration=Debug $target
