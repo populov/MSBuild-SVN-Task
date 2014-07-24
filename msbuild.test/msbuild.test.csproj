@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Svn2AssemblyInfoTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
