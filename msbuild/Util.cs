@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Threading;
 
@@ -9,8 +8,26 @@ namespace HauntedSoft.MsBuild
     public static class Util
     {
         public delegate void LogMessageFunction(string command, params object[] arguments);
-        public static string GetCommandOutput(string command, string args, LogMessageFunction log, bool outputToConsole)
+
+        public static string QuoteIfNeed(string s)
         {
+            if (s == null)
+                return null;
+            s = s.Trim(new[] {' ', '"'});
+            if (!s.Contains(" "))
+                return s;
+            return "\"" + s + "\"";
+        }
+
+        public static string GetCommandOutput(string command, string args, string workingDirectory, LogMessageFunction log, bool outputToConsole = true)
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT ||
+                Environment.OSVersion.Platform == PlatformID.Win32Windows)
+            {
+                args = "/c " + command + " " + args;
+                command = "cmd";
+            }
+
             var psi = new ProcessStartInfo
             {
                 Arguments = args,
@@ -18,7 +35,7 @@ namespace HauntedSoft.MsBuild
                 ErrorDialog = false,
                 FileName = command,
                 UseShellExecute = false,
-                WorkingDirectory = Directory.GetCurrentDirectory(),
+                WorkingDirectory = workingDirectory,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             };
@@ -42,11 +59,11 @@ namespace HauntedSoft.MsBuild
                 }
                 AppendOutput(p, output, outputToConsole);
                 log("exit code:" + p.ExitCode);
-                return output.ToString();
+                return p.ExitCode == 0 ? output.ToString() : null;
             }
             catch (Exception)
             {
-                return string.Empty;
+                return null;
             }
         }
 

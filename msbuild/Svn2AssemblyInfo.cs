@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Microsoft.Build.Framework;
 
 namespace HauntedSoft.MsBuild
 {
@@ -41,28 +43,39 @@ namespace HauntedSoft.MsBuild
             this.log = log;
         }
 
+        public string ProjectDir { get; set; }
         public string TemplateFile { get; set; }
         public string OutputFile { get; set; }
         public bool Silent { get; set; }
 
         public override bool Execute()
         {
-            var templateFile = TemplateFile ?? "Properties\\AssemblyInfo.cs.in";
-            var outputFile = OutputFile ?? "Properties\\AssemblyInfo.cs";
+            var templateFile = Util.QuoteIfNeed(TemplateFile) ?? "Properties\\AssemblyInfo.cs.in";
+            var outputFile = Util.QuoteIfNeed(OutputFile) ?? "Properties\\AssemblyInfo.cs";
+            if (string.IsNullOrEmpty(ProjectDir))
+                ProjectDir = Environment.CurrentDirectory;
 
-            var svnInfo = Util.GetCommandOutput("cmd", "/c svn info", log, Silent);
-            if (string.IsNullOrWhiteSpace(svnInfo) || svnInfo.Count(c => c == '\r' || c == '\n') < 3)
-                svnInfo = Util.GetCommandOutput("cmd", "/c git svn info", log, Silent);
+            if (RunSubWCRev(templateFile, outputFile))
+                return true;
+            var svnInfo = GetSvnInfo();
+            if (string.IsNullOrWhiteSpace(svnInfo))
+                svnInfo = GetGitSvnInfo();
+
+            if (string.IsNullOrWhiteSpace(svnInfo))
+            {
+                log("{0} update failed", outputFile);
+                return File.Exists(outputFile);
+            }
 
             var template = File.Exists(templateFile) ? File.ReadAllText(templateFile) : "";
             var tags = BuildTags(svnInfo);
             var newContent = GenerateFileContent(tags, template);
 
-            var outDir = new FileInfo(outputFile).DirectoryName;
-            if (outDir != null && !Directory.Exists(outDir))
-                Directory.CreateDirectory(outDir);
             if (FileMissingOrOutdated(outputFile, newContent))
             {
+                var outDir = new FileInfo(outputFile).DirectoryName;
+                if (outDir != null && !Directory.Exists(outDir))
+                    Directory.CreateDirectory(outDir);
                 File.WriteAllText(outputFile, newContent);
                 log("{0} updated", outputFile);
             }
@@ -71,6 +84,22 @@ namespace HauntedSoft.MsBuild
                 log("{0} stay untouched", outputFile);
             }
             return true;
+        }
+
+        private bool RunSubWCRev(string templateFile, string outputFile)
+        {
+            var parameters = Util.QuoteIfNeed(ProjectDir) + " " + templateFile + " " + outputFile;
+            return null != Util.GetCommandOutput("SubWCRev.exe", parameters, ProjectDir, log, !Silent);
+        }
+
+        private string GetSvnInfo()
+        {
+            return Util.GetCommandOutput("svn", "info", ProjectDir, log, !Silent);
+        }
+
+        private string GetGitSvnInfo()
+        {
+            return Util.GetCommandOutput("git", "svn info", ProjectDir, log, !Silent);
         }
 
         public static string GenerateFileContent(IEnumerable<KeyValuePair<string, string>> tags, string template)
@@ -85,7 +114,7 @@ namespace HauntedSoft.MsBuild
 
         public static IDictionary<string, string> BuildTags(string svnInfo)
         {
-            var pairs = svnInfo.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            var pairs = (svnInfo ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(s => !string.IsNullOrWhiteSpace(s) && s.Contains(":"))
                 .ToDictionary(GetKey, s => s.Substring(s.IndexOf(":", StringComparison.InvariantCulture) + 1).Trim());
             var result = pairs.ToDictionary(p => textToTag.ContainsKey(p.Key) ? textToTag[p.Key] : c+p.Key+c, p => p.Value);
